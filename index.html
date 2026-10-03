@@ -1,0 +1,440 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Game Builder</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #0b0d12;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+header {
+    padding: 25px;
+    text-align: center;
+    background: #11141c;
+    border-bottom: 1px solid #292d38;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 32px;
+}
+
+header p {
+    color: #9ca3af;
+}
+
+.container {
+    max-width: 1400px;
+    margin: auto;
+    padding: 25px;
+}
+
+.generator {
+    background: #151922;
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+
+textarea {
+    width: 100%;
+    resize: vertical;
+    border: 1px solid #303542;
+    border-radius: 10px;
+    background: #0d1016;
+    color: white;
+    padding: 15px;
+    font-size: 16px;
+    outline: none;
+}
+
+#prompt {
+    min-height: 100px;
+}
+
+button {
+    margin-top: 12px;
+    padding: 13px 22px;
+    border: 0;
+    border-radius: 10px;
+    background: #6c5ce7;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #5848d6;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: wait;
+}
+
+.workspace {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.panel {
+    background: #151922;
+    border-radius: 15px;
+    padding: 15px;
+}
+
+.panel h2 {
+    margin-top: 0;
+}
+
+#code {
+    height: 550px;
+    font-family: monospace;
+    font-size: 14px;
+    color: #00ff9d;
+}
+
+#preview {
+    width: 100%;
+    height: 550px;
+    border: 0;
+    border-radius: 10px;
+    background: white;
+}
+
+@media (max-width: 800px) {
+    .workspace {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>🎮 AI Game Builder</h1>
+    <p>Опиши игру — конструктор создаст её прямо в браузере</p>
+</header>
+
+<div class="container">
+
+    <div class="generator">
+
+        <h2>✨ Что создать?</h2>
+
+        <textarea
+            id="prompt"
+            placeholder="Например: Сделай игру, где игрок управляет космическим кораблём, уничтожает астероиды и набирает очки."
+        ></textarea>
+
+        <button id="generate">
+            🚀 Создать игру
+        </button>
+
+    </div>
+
+    <div class="workspace">
+
+        <div class="panel">
+
+            <h2>💻 Код игры</h2>
+
+            <textarea id="code"></textarea>
+
+        </div>
+
+        <div class="panel">
+
+            <h2>🎮 Игра</h2>
+
+            <iframe id="preview"></iframe>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+const promptInput = document.getElementById("prompt");
+const generateButton = document.getElementById("generate");
+const codeEditor = document.getElementById("code");
+const preview = document.getElementById("preview");
+
+generateButton.addEventListener("click", generateGame);
+
+function generateGame() {
+
+    const prompt = promptInput.value.trim();
+
+    if (!prompt) {
+        alert("Напиши, какую игру ты хочешь создать!");
+        return;
+    }
+
+    generateButton.disabled = true;
+    generateButton.textContent = "⏳ Создаю игру...";
+
+    /*
+        Демо-генератор.
+
+        Позже сюда можно подключить настоящий ИИ API.
+    */
+
+    const gameCode = createDemoGame(prompt);
+
+    codeEditor.value = gameCode;
+
+    preview.srcdoc = gameCode;
+
+    generateButton.disabled = false;
+    generateButton.textContent = "🚀 Создать игру";
+}
+
+
+function createDemoGame(description) {
+
+return `<!DOCTYPE html>
+
+<html lang="ru">
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>Моя игра</title>
+
+<style>
+
+body {
+    margin: 0;
+    overflow: hidden;
+    background: #080b12;
+    font-family: Arial;
+    color: white;
+}
+
+canvas {
+    display: block;
+    margin: auto;
+    background: #111827;
+}
+
+#info {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    font-size: 20px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="info">
+    🎮 Управление: WASD / стрелки
+    <br>
+    ⭐ Очки: <span id="score">0</span>
+</div>
+
+<canvas id="game" width="800" height="500"></canvas>
+
+<script>
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const scoreElement = document.getElementById("score");
+
+let score = 0;
+
+const player = {
+    x: 380,
+    y: 230,
+    size: 35,
+    speed: 5
+};
+
+const keys = {};
+
+document.addEventListener("keydown", function(e) {
+    keys[e.key.toLowerCase()] = true;
+});
+
+document.addEventListener("keyup", function(e) {
+    keys[e.key.toLowerCase()] = false;
+});
+
+let coins = [];
+
+for (let i = 0; i < 10; i++) {
+
+    coins.push({
+        x: Math.random() * 760 + 20,
+        y: Math.random() * 460 + 20,
+        size: 12
+    });
+
+}
+
+
+function update() {
+
+    if (
+        keys["arrowup"] ||
+        keys["w"]
+    ) {
+        player.y -= player.speed;
+    }
+
+    if (
+        keys["arrowdown"] ||
+        keys["s"]
+    ) {
+        player.y += player.speed;
+    }
+
+    if (
+        keys["arrowleft"] ||
+        keys["a"]
+    ) {
+        player.x -= player.speed;
+    }
+
+    if (
+        keys["arrowright"] ||
+        keys["d"]
+    ) {
+        player.x += player.speed;
+    }
+
+    player.x = Math.max(
+        0,
+        Math.min(
+            canvas.width - player.size,
+            player.x
+        )
+    );
+
+    player.y = Math.max(
+        0,
+        Math.min(
+            canvas.height - player.size,
+            player.y
+        )
+    );
+
+
+    coins.forEach((coin, index) => {
+
+        const distance = Math.hypot(
+            player.x - coin.x,
+            player.y - coin.y
+        );
+
+        if (distance < 30) {
+
+            coins.splice(index, 1);
+
+            score++;
+
+            scoreElement.textContent = score;
+
+            coins.push({
+                x: Math.random() * 760 + 20,
+                y: Math.random() * 460 + 20,
+                size: 12
+            });
+
+        }
+
+    });
+
+}
+
+
+function draw() {
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    // Игрок
+
+    ctx.fillStyle = "#6c5ce7";
+
+    ctx.fillRect(
+        player.x,
+        player.y,
+        player.size,
+        player.size
+    );
+
+
+    // Монеты
+
+    coins.forEach(coin => {
+
+        ctx.beginPath();
+
+        ctx.arc(
+            coin.x,
+            coin.y,
+            coin.size,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fillStyle = "#ffd32a";
+
+        ctx.fill();
+
+    });
+
+}
+
+
+function gameLoop() {
+
+    update();
+
+    draw();
+
+    requestAnimationFrame(gameLoop);
+
+}
+
+gameLoop();
+
+</script>
+
+</body>
+
+</html>`;
+}
+
+</script>
+
+</body>
+</html>
+```
